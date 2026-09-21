@@ -1,8 +1,9 @@
 export const SHEET_ID = '1TvcW3pddgxs3ubZz83yY7nL7Sxux9Utmcycwdeuo5Pc'
+export const SHEET_TAB_NAME = 'USE'
 export const SHEET_GID = '1128669720'
 
 export const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`
-export const SHEET_GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SHEET_GID}`
+export const SHEET_GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_TAB_NAME)}`
 
 export const FALLBACK_ROWS = [
   {
@@ -41,6 +42,7 @@ const HEADER_ALIASES = {
   billStatus: ['สถานะบิลมัดจำ', 'สถานะบิล', 'bill status'],
   order: ['เลขออเดอร์', 'เลขจอง', 'เลข booking', 'booking number', 'order number', 'order'],
   employee: ['พนักงาน', 'employee', 'staff'],
+  owner: ['เป็นของใคร', 'ผู้จอง', 'ชื่อผู้จอง', 'ชื่อพนักงาน', 'พนักงาน', 'owner', 'customer', 'employee', 'staff'],
   productStatus: ['สถานะสินค้า', 'product status', 'status'],
 }
 
@@ -115,6 +117,7 @@ export function mapSheetRows(matrix) {
     billStatus: findHeaderIndex(headers, HEADER_ALIASES.billStatus),
     order: findHeaderIndex(headers, HEADER_ALIASES.order),
     employee: findHeaderIndex(headers, HEADER_ALIASES.employee),
+    owner: findHeaderIndex(headers, HEADER_ALIASES.owner),
     productStatus: findHeaderIndex(headers, HEADER_ALIASES.productStatus),
   }
 
@@ -124,6 +127,7 @@ export function mapSheetRows(matrix) {
     billStatus: cleanCell(values[indexes.billStatus] ?? ''),
     order: cleanCell(values[indexes.order] ?? ''),
     employee: cleanCell(values[indexes.employee] ?? ''),
+    owner: cleanCell(values[indexes.owner >= 0 ? indexes.owner : indexes.employee] ?? ''),
     productStatus: cleanCell(values[indexes.productStatus] ?? ''),
   })).filter((row) => row.order !== '')
 }

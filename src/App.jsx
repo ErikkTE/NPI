@@ -93,11 +93,11 @@ function StatusBadge({ value, kind = 'neutral' }) {
 
 function ResultTable({ rows }) {
   return (
-    <div className="result-table" role="table" aria-label="ผลการค้นหาเลขออเดอร์">
+    <div className="result-table" role="table" aria-label="ผลการค้นหาเลขจองจากแท็บ USE">
       <div className="result-table__head" role="row">
         <span role="columnheader">เลขออเดอร์</span>
         <span role="columnheader">สถานะบิลมัดจำ</span>
-        <span role="columnheader">พนักงาน</span>
+        <span role="columnheader">เป็นของใคร</span>
         <span role="columnheader">สถานะสินค้า</span>
       </div>
       {rows.map((row, index) => (
@@ -106,7 +106,7 @@ function ResultTable({ rows }) {
           <span data-label="สถานะบิลมัดจำ" role="cell">
             <StatusBadge value={row.billStatus} />
           </span>
-          <span data-label="พนักงาน" role="cell">{row.employee || '—'}</span>
+          <span data-label="เป็นของใคร" role="cell">{row.owner || row.employee || '—'}</span>
           <span data-label="สถานะสินค้า" role="cell">
             <StatusBadge value={row.productStatus} kind="success" />
           </span>
@@ -160,10 +160,10 @@ function ConnectionStatus({ status, lastSync, onRefresh }) {
   const isFallback = status === 'fallback'
   const isLoading = status === 'loading'
   const label = isLoading
-    ? 'กำลังเชื่อมต่อ Google Sheet'
+    ? 'กำลังเชื่อมต่อแท็บ USE'
     : isFallback
       ? 'โหมดสาธิต — ใช้ข้อมูลสำรอง'
-      : 'เชื่อมต่อ Google Sheet แล้ว'
+      : 'เชื่อมต่อแท็บ USE แล้ว'
 
   return (
     <div className={`connection-status connection-status--${status}`}>
@@ -250,7 +250,7 @@ export default function App() {
               <span className="section-heading__rail" aria-hidden="true" />
               <div>
                 <h1 id="search-title">ตรวจสอบเลขจอง</h1>
-                <p>ค้นหาเลขออเดอร์จากข้อมูลใน Google Sheet เพื่อตรวจสอบสถานะล่าสุด</p>
+                <p>ค้นหาเลขจองจากแท็บ USE ใน Google Sheet เพื่อดูสถานะล่าสุดและว่าเป็นของใคร</p>
               </div>
             </div>
 
@@ -278,7 +278,7 @@ export default function App() {
                 ค้นหาเลขจอง
               </button>
             </form>
-            <p className="search-hint">รองรับการค้นหาแบบเต็มเลข เช่น DEMO-001, DEMO-002</p>
+            <p className="search-hint">ระบบค้นหาจากแท็บ USE โดยตรง รองรับทั้งเลขจองเต็มและบางส่วน</p>
 
             <div className="result-area">
               {resultState === 'success' ? (
@@ -301,7 +301,7 @@ export default function App() {
               <span className="section-heading__rail" aria-hidden="true" />
               <div>
                 <h2 id="form-title">บันทึกเลขจองใหม่</h2>
-                <p>กรอกข้อมูลลูกค้าผ่าน Google Form เพื่อบันทึกเลขออเดอร์ใหม่ในระบบ</p>
+                <p>กรอกข้อมูลผ่าน Google Form เพื่อบันทึกเลขจองใหม่ในระบบ</p>
               </div>
             </div>
             <a className="form-link" href={FORM_LINK} target="_blank" rel="noreferrer">
@@ -315,7 +315,7 @@ export default function App() {
           </section>
 
           <footer className="app-footer">
-            <span>ข้อมูลแสดงจาก Google Sheet ที่เชื่อมต่ออยู่</span>
+            <span>ข้อมูลแสดงจากแท็บ USE ใน Google Sheet ที่เชื่อมต่ออยู่</span>
             <a href={FORM_LINK} target="_blank" rel="noreferrer">เปิดแบบฟอร์มบันทึกเลขจอง <ExternalIcon size={14} /></a>
           </footer>
         </main>
