@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   FALLBACK_ROWS,
+  SHEET_TAB_NAME,
   fetchSheetRows,
   formatSyncTime,
   searchSheetRows,
@@ -52,7 +53,7 @@ function RefreshIcon({ size = 19 }) {
   )
 }
 
-function FormIcon({ size = 28 }) {
+function FormIcon({ size = 24 }) {
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 28 28" fill="none">
       <path d="M7 3.75h10.2L21 7.55v16.7H7V3.75Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
@@ -65,22 +66,39 @@ function ExternalIcon({ size = 17 }) {
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
       <path d="M14 5h5v5M19 5l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M19 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M19 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
-function DatabaseIcon({ size = 24 }) {
+function UserIcon({ size = 23 }) {
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <ellipse cx="12" cy="5.4" rx="7.5" ry="3" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M4.5 5.4v6.3c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3V5.4M4.5 11.7V18c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-6.3" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M5.2 19.3c.8-3.1 3-4.8 6.8-4.8s6 1.7 6.8 4.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ReceiptIcon({ size = 23 }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M6.2 3.6h11.6v16.8l-2.2-1.4-1.8 1.4-1.8-1.4-1.8 1.4-1.8-1.4-2.2 1.4V3.6Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M9 8h6M9 11.7h6M9 15.4h3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function PackageIcon({ size = 23 }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="m4.5 7.2 7.5 4 7.5-4M12 11.2v8.5M5 6.3 12 3l7 3.3v10.4L12 21l-7-4.3V6.3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
     </svg>
   )
 }
 
 function StatusBadge({ value, kind = 'neutral' }) {
-  if (!value) return <span className="empty-cell">—</span>
+  if (!value) return <span className="empty-cell">ยังไม่มีข้อมูล</span>
 
   const isSuccess = kind === 'success'
   return (
@@ -91,27 +109,60 @@ function StatusBadge({ value, kind = 'neutral' }) {
   )
 }
 
-function ResultTable({ rows }) {
+function DetailItem({ icon: Icon, label, children, className = '' }) {
   return (
-    <div className="result-table" role="table" aria-label="ผลการค้นหาเลขจองจากแท็บ USE">
-      <div className="result-table__head" role="row">
-        <span role="columnheader">เลขออเดอร์</span>
-        <span role="columnheader">สถานะบิลมัดจำ</span>
-        <span role="columnheader">เป็นของใคร</span>
-        <span role="columnheader">สถานะสินค้า</span>
+    <div className={`detail-item ${className}`}>
+      <span className="detail-item__icon"><Icon size={23} /></span>
+      <div className="detail-item__body">
+        <span className="detail-item__label">{label}</span>
+        <div className="detail-item__value">{children}</div>
       </div>
-      {rows.map((row, index) => (
-        <div className="result-table__row" role="row" key={`${row.order}-${index}`}>
-          <strong data-label="เลขออเดอร์" role="cell">{row.order}</strong>
-          <span data-label="สถานะบิลมัดจำ" role="cell">
-            <StatusBadge value={row.billStatus} />
-          </span>
-          <span data-label="เป็นของใคร" role="cell">{row.owner || row.employee || '—'}</span>
-          <span data-label="สถานะสินค้า" role="cell">
-            <StatusBadge value={row.productStatus} kind="success" />
-          </span>
+    </div>
+  )
+}
+
+function BookingCard({ row }) {
+  const owner = row.owner || row.employee || 'ยังไม่มีข้อมูล'
+
+  return (
+    <article className="booking-card">
+      <div className="booking-card__summary">
+        <div>
+          <span className="field-label">เลขจอง</span>
+          <strong className="booking-card__order">{row.order}</strong>
         </div>
-      ))}
+        <span className="booking-card__source">แท็บ {SHEET_TAB_NAME}</span>
+      </div>
+
+      <div className="booking-details">
+        <DetailItem icon={UserIcon} label="เป็นของใคร">
+          <strong>{owner}</strong>
+        </DetailItem>
+        <DetailItem icon={ReceiptIcon} label="สถานะบิลมัดจำ">
+          <StatusBadge value={row.billStatus} />
+        </DetailItem>
+        <DetailItem icon={PackageIcon} label="สถานะสินค้า">
+          <StatusBadge value={row.productStatus} kind="success" />
+        </DetailItem>
+      </div>
+    </article>
+  )
+}
+
+function ResultPanel({ rows }) {
+  return (
+    <div className="results-panel" aria-live="polite">
+      <div className="results-panel__heading">
+        <span className="results-panel__icon"><CheckIcon size={26} /></span>
+        <div>
+          <strong>พบข้อมูลเลขจองในระบบ</strong>
+          <span>อัปเดตล่าสุดจาก Google Sheet ({SHEET_TAB_NAME})</span>
+        </div>
+        <span className="results-panel__count">{rows.length} รายการ</span>
+      </div>
+      <div className="booking-list">
+        {rows.map((row, index) => <BookingCard row={row} key={`${row.order}-${index}`} />)}
+      </div>
     </div>
   )
 }
@@ -119,11 +170,11 @@ function ResultTable({ rows }) {
 function EmptyState({ type, onRetry }) {
   if (type === 'loading') {
     return (
-      <div className="empty-state empty-state--loading" aria-live="polite">
+      <div className="state-card state-card--loading" aria-live="polite">
         <span className="spinner" aria-hidden="true" />
         <div>
           <strong>กำลังค้นหาข้อมูล...</strong>
-          <p>โปรดรอสักครู่ เรากำลังตรวจสอบข้อมูลใน Google Sheet</p>
+          <p>กำลังตรวจสอบเลขจองจากแท็บ {SHEET_TAB_NAME}</p>
         </div>
       </div>
     )
@@ -131,14 +182,14 @@ function EmptyState({ type, onRetry }) {
 
   if (type === 'not-found') {
     return (
-      <div className="empty-state empty-state--error" aria-live="polite">
-        <span className="empty-state__icon"><AlertIcon size={24} /></span>
+      <div className="state-card state-card--error" aria-live="polite">
+        <span className="state-card__icon"><AlertIcon size={23} /></span>
         <div>
-          <strong>ไม่พบเลขออเดอร์</strong>
-          <p>ไม่พบเลขออเดอร์นี้ในระบบ กรุณาตรวจสอบความถูกต้องหรือลองค้นหาอีกครั้ง</p>
+          <strong>ไม่พบเลขจองนี้</strong>
+          <p>ลองตรวจสอบตัวเลขอีกครั้ง หรือค้นหาด้วยเลขจองบางส่วน</p>
           <button type="button" className="retry-button" onClick={onRetry}>
             <RefreshIcon size={17} />
-            ลองค้นหาอีกครั้ง
+            ค้นหาอีกครั้ง
           </button>
         </div>
       </div>
@@ -146,11 +197,11 @@ function EmptyState({ type, onRetry }) {
   }
 
   return (
-    <div className="empty-state empty-state--idle" aria-live="polite">
-      <span className="empty-state__icon"><DatabaseIcon size={27} /></span>
+    <div className="state-card state-card--idle" aria-live="polite">
+      <span className="state-card__icon"><SearchIcon size={25} /></span>
       <div>
-        <strong>พร้อมค้นหาเลขออเดอร์</strong>
-        <p>กรอกเลขออเดอร์ด้านบนเพื่อดูสถานะล่าสุดจาก Google Sheet</p>
+        <strong>เริ่มค้นหาเลขจองได้เลย</strong>
+        <p>กรอกเลขจองด้านบนเพื่อดูสถานะและชื่อพนักงานผู้รับผิดชอบ</p>
       </div>
     </div>
   )
@@ -160,18 +211,18 @@ function ConnectionStatus({ status, lastSync, onRefresh }) {
   const isFallback = status === 'fallback'
   const isLoading = status === 'loading'
   const label = isLoading
-    ? 'กำลังเชื่อมต่อแท็บ USE'
+    ? `กำลังเชื่อมต่อแท็บ ${SHEET_TAB_NAME}`
     : isFallback
       ? 'โหมดสาธิต — ใช้ข้อมูลสำรอง'
-      : 'เชื่อมต่อแท็บ USE แล้ว'
+      : `เชื่อมต่อแท็บ ${SHEET_TAB_NAME} แล้ว`
 
   return (
     <div className={`connection-status connection-status--${status}`}>
       <span className="connection-status__dot" aria-hidden="true" />
-      <span>{label}</span>
+      <span className="connection-status__label">{label}</span>
       {!isLoading && lastSync && <span className="connection-status__time">อัปเดต {formatSyncTime(lastSync)} น.</span>}
       <button type="button" className="icon-button" onClick={onRefresh} aria-label="รีเฟรชข้อมูลจาก Google Sheet" title="รีเฟรชข้อมูล">
-        <RefreshIcon size={16} />
+        <RefreshIcon size={17} />
       </button>
     </div>
   )
@@ -222,7 +273,7 @@ export default function App() {
       const foundRows = searchSheetRows(sourceRows, query).slice(0, 12)
       setMatches(foundRows)
       setResultState(foundRows.length > 0 ? 'success' : 'not-found')
-    }, 240)
+    }, 220)
   }
 
   const clearSearch = () => {
@@ -247,76 +298,61 @@ export default function App() {
         <main className="content">
           <section className="search-section" aria-labelledby="search-title">
             <div className="section-heading">
-              <span className="section-heading__rail" aria-hidden="true" />
-              <div>
-                <h1 id="search-title">ตรวจสอบเลขจอง</h1>
-                <p>ค้นหาเลขจองจากแท็บ USE ใน Google Sheet เพื่อดูสถานะล่าสุดและว่าเป็นของใคร</p>
-              </div>
+              <h1 id="search-title">ตรวจสอบเลขจอง</h1>
+              <p>ค้นหาเลขจองจาก Google Sheet แท็บ {SHEET_TAB_NAME} เพื่อดูสถานะล่าสุดและชื่อพนักงานผู้รับผิดชอบ</p>
             </div>
 
             <form className="search-form" onSubmit={handleSearch}>
               <div className="search-input-wrap">
                 <label className="sr-only" htmlFor="booking-search">เลขออเดอร์หรือเลขจอง</label>
-                <SearchIcon size={23} />
+                <SearchIcon size={24} />
                 <input
                   ref={inputRef}
                   id="booking-search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="กรอกเลขออเดอร์ เช่น DEMO-001"
+                  placeholder="กรอกเลขออเดอร์หรือเลขจอง"
                   inputMode="text"
                   autoComplete="off"
                 />
                 {query && (
-                  <button type="button" className="clear-button" onClick={clearSearch} aria-label="ล้างเลขออเดอร์">
+                  <button type="button" className="clear-button" onClick={clearSearch} aria-label="ล้างเลขจอง">
                     <XIcon />
                   </button>
                 )}
               </div>
               <button className="primary-button" type="submit" disabled={resultState === 'loading'}>
-                {resultState === 'loading' ? <span className="button-spinner" aria-hidden="true" /> : null}
+                {resultState === 'loading' ? <span className="button-spinner" aria-hidden="true" /> : <SearchIcon size={21} />}
                 ค้นหาเลขจอง
               </button>
             </form>
-            <p className="search-hint">ระบบค้นหาจากแท็บ USE โดยตรง รองรับทั้งเลขจองเต็มและบางส่วน</p>
+            <p className="search-hint"><span className="search-hint__dot" aria-hidden="true" />ค้นหาได้ทั้งเลขเต็มและบางส่วน · กด Enter เพื่อค้นหา</p>
 
             <div className="result-area">
-              {resultState === 'success' ? (
-                <div className="success-result" aria-live="polite">
-                  <div className="success-result__heading">
-                    <span className="success-result__icon"><CheckIcon size={25} /></span>
-                    <strong>พบข้อมูลเลขออเดอร์นี้</strong>
-                    <span className="success-result__count">{matches.length} รายการ</span>
-                  </div>
-                  <ResultTable rows={matches} />
-                </div>
-              ) : (
-                <EmptyState type={resultState} onRetry={handleSearch} />
-              )}
+              {resultState === 'success' ? <ResultPanel rows={matches} /> : <EmptyState type={resultState} onRetry={handleSearch} />}
             </div>
           </section>
 
           <section className="form-section" aria-labelledby="form-title">
             <div className="form-section__copy">
-              <span className="section-heading__rail" aria-hidden="true" />
+              <span className="form-section__icon"><FormIcon size={25} /></span>
               <div>
-                <h2 id="form-title">บันทึกเลขจองใหม่</h2>
-                <p>กรอกข้อมูลผ่าน Google Form เพื่อบันทึกเลขจองใหม่ในระบบ</p>
+                <h2 id="form-title">มีเลขจองใหม่ใช่ไหม?</h2>
+                <p>เปิด Google Form เพื่อบันทึกข้อมูลเข้าสู่ระบบ</p>
               </div>
             </div>
             <a className="form-link" href={FORM_LINK} target="_blank" rel="noreferrer">
-              <span className="form-link__icon"><FormIcon /></span>
-              <span className="form-link__text">
-                <strong>เปิด Google Form</strong>
-                <small>ระบบจะเปิด Google Form ในหน้าต่างใหม่</small>
-              </span>
-              <ExternalIcon />
+              <span>เปิด Google Form</span>
+              <ExternalIcon size={18} />
             </a>
           </section>
 
           <footer className="app-footer">
-            <span>ข้อมูลแสดงจากแท็บ USE ใน Google Sheet ที่เชื่อมต่ออยู่</span>
-            <a href={FORM_LINK} target="_blank" rel="noreferrer">เปิดแบบฟอร์มบันทึกเลขจอง <ExternalIcon size={14} /></a>
+            <span>ข้อมูลแสดงจาก Google Sheet แท็บ {SHEET_TAB_NAME}</span>
+            <button type="button" className="footer-refresh" onClick={loadData}>
+              <RefreshIcon size={14} />
+              รีเฟรชข้อมูล
+            </button>
           </footer>
         </main>
       </div>
