@@ -5,6 +5,20 @@ export const SHEET_GID = '1128669720'
 export const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`
 export const SHEET_GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_TAB_NAME)}`
 
+// รหัสจากคอลัมน์ "พนักงาน" ในแท็บ USE และชื่อที่แสดงในภาพรายชื่อพนักงาน
+export const EMPLOYEE_NAMES_BY_ID = Object.freeze({
+  '18508': 'กาน',
+  '31958': 'ขนุน',
+  '26973': 'โจ้',
+  '28937': 'เมย์',
+  '29384': 'ชีต้า',
+  '30976': 'ต้า',
+  '31935': 'แพท',
+  '32355': 'Linda',
+  '32992': 'อั้ม',
+  '32975': 'Martin',
+})
+
 export const FALLBACK_ROWS = [
   {
     billStatus: 'ตัวอย่างข้อมูล',
@@ -55,6 +69,14 @@ const normaliseSearch = (value = '') =>
     .toLowerCase()
     .replace(/[\s-]+/g, '')
     .trim()
+
+const resolveEmployeeName = (value = '') => {
+  const cleaned = cleanCell(value)
+  if (!cleaned) return ''
+
+  const employeeId = cleaned.replace(/^#\s*/, '')
+  return EMPLOYEE_NAMES_BY_ID[employeeId] ?? cleaned
+}
 
 function findHeaderIndex(headers, aliases) {
   const normalisedHeaders = headers.map(normaliseHeader)
@@ -127,7 +149,7 @@ export function mapSheetRows(matrix) {
     billStatus: cleanCell(values[indexes.billStatus] ?? ''),
     order: cleanCell(values[indexes.order] ?? ''),
     employee: cleanCell(values[indexes.employee] ?? ''),
-    owner: cleanCell(values[indexes.owner >= 0 ? indexes.owner : indexes.employee] ?? ''),
+    owner: resolveEmployeeName(values[indexes.owner >= 0 ? indexes.owner : indexes.employee] ?? ''),
     productStatus: cleanCell(values[indexes.productStatus] ?? ''),
   })).filter((row) => row.order !== '')
 }
