@@ -1,13 +1,24 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  EMPLOYEE_NAMES_BY_ID,
   FALLBACK_ROWS,
   SHEET_TAB_NAME,
   fetchSheetRows,
   formatSyncTime,
   searchSheetRows,
 } from './lib/sheet'
+import {
+  getBillStatusTone,
+  getProductStatusTone,
+  hasStatusValue,
+  isBillUnused,
+  isCallComplete,
+  isProductArrived,
+} from './lib/status'
 
 const FORM_LINK = 'https://docs.google.com/forms/d/e/1FAIpQLSefKgnfXIoJOJ-aed-eUXkOKe1Rd-B5Y0SG4mxF2Lk7GGEvpA/viewform'
+const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000
+const AUTO_REFRESH_LABEL = '5 นาที'
 
 function SearchIcon({ size = 22 }) {
   return (
@@ -22,6 +33,14 @@ function XIcon({ size = 18 }) {
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
       <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ChevronDownIcon({ size = 19 }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="m6 9 6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -124,32 +143,6 @@ function CommentIcon({ size = 23 }) {
   )
 }
 
-const normaliseStatusText = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
-
-const hasStatusValue = (value) => normaliseStatusText(value) !== ''
-
-const includesStatusPhrase = (value, phrases) => {
-  const text = normaliseStatusText(value)
-  return phrases.some((phrase) => text.includes(phrase))
-}
-
-function getBillStatusTone(value) {
-  if (!hasStatusValue(value)) return 'danger'
-  if (includesStatusPhrase(value, ['ยังไม่ได้ใช้', 'ยังไม่ใช้', 'ไม่ได้ใช้', 'ไม่ใช้', 'not used', 'unused'])) return 'danger'
-  if (includesStatusPhrase(value, ['ใช้บิลมัดจำไปแล้ว', 'ใช้บิลมัดจำแล้ว', 'ใช้บิลมัดจำ', 'ใช้ใบมัดจำไปแล้ว', 'ใช้ใบมัดจำแล้ว', 'ใช้ใบมัดจำ', 'ใช้บิลแล้ว', 'ใช้แล้ว', 'used'])) return 'success'
-  return 'danger'
-}
-
-function getProductStatusTone(value) {
-  if (!hasStatusValue(value)) return 'danger'
-  if (includesStatusPhrase(value, ['ยังไม่เข้า', 'ยังไม่มีสินค้า', 'ยังไม่มีข้อมูล', 'ไม่มีข้อมูล', 'สินค้าไม่เข้า', 'ของยังไม่เข้า', 'รอสินค้า', 'รอของ', 'out of stock', 'pending'])) return 'danger'
-  return 'info'
-}
-
-function isCallComplete(value) {
-  return hasStatusValue(value) && !includesStatusPhrase(value, ['ยังไม่ได้โทร', 'ยังไม่โทร', 'ไม่ได้โทร', 'ไม่โทร', 'not called'])
-}
-
 function StatusBadge({ value, tone = 'neutral', emptyLabel = 'ยังไม่มีข้อมูล', className = '' }) {
   const hasValue = hasStatusValue(value)
   const resolvedTone = hasValue ? tone : 'danger'
@@ -230,6 +223,93 @@ function ResultPanel({ rows }) {
   )
 }
 
+function EmployeeSection({ rows, employees, selectedEmployee, onEmployeeChange }) {
+  const employeeRows = useMemo(() => {
+    if (!selectedEmployee) return []
+
+    return rows.filter((row) => {
+      const owner = row.owner || row.employee
+      return owner === selectedEmployee && isBillUnused(row.billStatus) && isProductArrived(row.productStatus)
+    })
+  }, [rows, selectedEmployee])
+
+  return (
+    <section className="employee-section" aria-labelledby="employee-title">
+      <div className="employee-section__header">
+        <div className="employee-section__copy">
+          <span className="employee-section__icon"><UserIcon size={24} /></span>
+          <div>
+            <h2 id="employee-title">เลขจองของพนักงาน</h2>
+            <p>เลือกชื่อเพื่อดูรายการที่ต้องติดตามของตัวเอง</p>
+          </div>
+        </div>
+
+        <div className="employee-picker">
+          <label htmlFor="employee-filter">เลือกชื่อพนักงาน</label>
+          <div className="employee-select-wrap">
+            <select
+              id="employee-filter"
+              value={selectedEmployee}
+              onChange={(event) => onEmployeeChange(event.target.value)}
+            >
+              <option value="">เลือกชื่อพนักงาน</option>
+              {employees.map((employee) => <option key={employee} value={employee}>{employee}</option>)}
+            </select>
+            <ChevronDownIcon size={18} />
+          </div>
+          {selectedEmployee && (
+            <button type="button" className="employee-clear" onClick={() => onEmployeeChange('')}>
+              ล้างตัวกรอง
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="employee-section__rule">
+        <span className="employee-section__rule-icons" aria-hidden="true">
+          <ReceiptIcon size={16} />
+          <PackageIcon size={16} />
+        </span>
+        <span>แสดงเฉพาะรายการที่ยังไม่ได้ใช้บิลมัดจำ และสินค้าเข้าแล้ว</span>
+      </div>
+
+      {!selectedEmployee ? (
+        <div className="employee-empty employee-empty--idle" aria-live="polite">
+          <span className="employee-empty__icon"><UserIcon size={23} /></span>
+          <div>
+            <strong>เลือกชื่อพนักงานเพื่อเริ่มดูรายการ</strong>
+            <p>ระบบจะแสดงเลขจองทั้งหมดที่ตรงกับเงื่อนไขให้ทันที</p>
+          </div>
+        </div>
+      ) : (
+        <div className="employee-results" aria-live="polite">
+          <div className="employee-results__heading">
+            <div>
+              <strong>เลขจองของ {selectedEmployee}</strong>
+              <span>ยังไม่ได้ใช้บิลมัดจำ · สินค้าเข้าแล้ว</span>
+            </div>
+            <span className="employee-results__count">{employeeRows.length} รายการ</span>
+          </div>
+
+          {employeeRows.length > 0 ? (
+            <div className="booking-list">
+              {employeeRows.map((row, index) => <BookingCard row={row} key={`${row.order}-${index}`} />)}
+            </div>
+          ) : (
+            <div className="employee-empty employee-empty--empty">
+              <span className="employee-empty__icon"><AlertIcon size={23} /></span>
+              <div>
+                <strong>ยังไม่มีรายการที่ตรงเงื่อนไข</strong>
+                <p>เมื่อบิลมัดจำยังไม่ถูกใช้และสินค้าเข้าแล้ว รายการจะปรากฏที่นี่</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
 function EmptyState({ type, onRetry }) {
   if (type === 'loading') {
     return (
@@ -284,7 +364,7 @@ function ConnectionStatus({ status, lastSync, onRefresh }) {
       <span className="connection-status__dot" aria-hidden="true" />
       <span className="connection-status__label">{label}</span>
       {!isLoading && lastSync && <span className="connection-status__time">อัปเดต {formatSyncTime(lastSync)} น.</span>}
-      <button type="button" className="icon-button" onClick={onRefresh} aria-label="รีเฟรชข้อมูลจาก Google Sheet" title="รีเฟรชข้อมูล">
+      <button type="button" className="icon-button" onClick={onRefresh} disabled={isLoading} aria-label="รีเฟรชข้อมูลจาก Google Sheet" title="รีเฟรชข้อมูล">
         <RefreshIcon size={17} />
       </button>
     </div>
@@ -298,18 +378,40 @@ export default function App() {
   const [resultState, setResultState] = useState('idle')
   const [connection, setConnection] = useState('loading')
   const [lastSync, setLastSync] = useState(null)
+  const [selectedEmployee, setSelectedEmployee] = useState('')
   const inputRef = useRef(null)
+  const queryRef = useRef('')
+  const searchActiveRef = useRef(false)
+
+  const availableEmployees = useMemo(() => {
+    const mappedNames = Object.values(EMPLOYEE_NAMES_BY_ID)
+    const loadedNames = rows.map((row) => row.owner || row.employee).filter(Boolean)
+    return [...new Set([...mappedNames, ...loadedNames])]
+  }, [rows])
 
   const loadData = useCallback(async () => {
     setConnection('loading')
+
+    const applyRows = (nextRows) => {
+      setRows(nextRows)
+
+      if (searchActiveRef.current && queryRef.current.trim()) {
+        const foundRows = searchSheetRows(nextRows, queryRef.current).slice(0, 12)
+        setMatches(foundRows)
+        setResultState(foundRows.length > 0 ? 'success' : 'not-found')
+      }
+
+      return nextRows
+    }
+
     try {
       const response = await fetchSheetRows()
-      setRows(response.rows)
+      applyRows(response.rows)
       setConnection('connected')
       setLastSync(new Date())
       return response.rows
     } catch {
-      setRows(FALLBACK_ROWS)
+      applyRows(FALLBACK_ROWS)
       setConnection('fallback')
       setLastSync(new Date())
       return FALLBACK_ROWS
@@ -320,9 +422,20 @@ export default function App() {
     loadData()
   }, [loadData])
 
+  useEffect(() => {
+    const refreshTimer = window.setInterval(() => {
+      loadData()
+    }, AUTO_REFRESH_INTERVAL_MS)
+
+    return () => window.clearInterval(refreshTimer)
+  }, [loadData])
+
   const handleSearch = async (event) => {
     event?.preventDefault()
+    searchActiveRef.current = true
+
     if (!query.trim()) {
+      searchActiveRef.current = false
       setMatches([])
       setResultState('idle')
       inputRef.current?.focus()
@@ -340,6 +453,8 @@ export default function App() {
   }
 
   const clearSearch = () => {
+    queryRef.current = ''
+    searchActiveRef.current = false
     setQuery('')
     setMatches([])
     setResultState('idle')
@@ -373,7 +488,12 @@ export default function App() {
                   ref={inputRef}
                   id="booking-search"
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => {
+                    const nextQuery = event.target.value
+                    queryRef.current = nextQuery
+                    searchActiveRef.current = false
+                    setQuery(nextQuery)
+                  }}
                   placeholder="กรอกเลขออเดอร์หรือเลขจอง"
                   inputMode="text"
                   autoComplete="off"
@@ -396,6 +516,13 @@ export default function App() {
             </div>
           </section>
 
+          <EmployeeSection
+            rows={rows}
+            employees={availableEmployees}
+            selectedEmployee={selectedEmployee}
+            onEmployeeChange={setSelectedEmployee}
+          />
+
           <section className="form-section" aria-labelledby="form-title">
             <div className="form-section__copy">
               <span className="form-section__icon"><FormIcon size={25} /></span>
@@ -411,8 +538,8 @@ export default function App() {
           </section>
 
           <footer className="app-footer">
-            <span>ข้อมูลแสดงจาก Google Sheet แท็บ {SHEET_TAB_NAME}</span>
-            <button type="button" className="footer-refresh" onClick={loadData}>
+            <span>ข้อมูลจาก Google Sheet แท็บ {SHEET_TAB_NAME} · อัปเดตอัตโนมัติทุก {AUTO_REFRESH_LABEL}</span>
+            <button type="button" className="footer-refresh" onClick={loadData} disabled={connection === 'loading'}>
               <RefreshIcon size={14} />
               รีเฟรชข้อมูล
             </button>
