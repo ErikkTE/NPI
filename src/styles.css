@@ -516,9 +516,26 @@ a {
   background: var(--success-soft);
 }
 
+.status-badge--info {
+  color: #1f6fae;
+  background: #eaf5ff;
+}
+
+.status-badge--danger {
+  color: #b43832;
+  background: var(--error-soft);
+}
+
 .status-badge--neutral {
   color: #526980;
   background: #edf2f7;
+}
+
+.status-badge--comment {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  white-space: pre-wrap;
 }
 
 .empty-cell {

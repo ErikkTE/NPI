@@ -124,14 +124,41 @@ function CommentIcon({ size = 23 }) {
   )
 }
 
-function StatusBadge({ value, kind = 'neutral' }) {
-  if (!value) return <span className="empty-cell">ยังไม่มีข้อมูล</span>
+const normaliseStatusText = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
 
-  const isSuccess = kind === 'success'
+const hasStatusValue = (value) => normaliseStatusText(value) !== ''
+
+const includesStatusPhrase = (value, phrases) => {
+  const text = normaliseStatusText(value)
+  return phrases.some((phrase) => text.includes(phrase))
+}
+
+function getBillStatusTone(value) {
+  if (!hasStatusValue(value)) return 'danger'
+  if (includesStatusPhrase(value, ['ยังไม่ได้ใช้', 'ยังไม่ใช้', 'ไม่ได้ใช้', 'ไม่ใช้', 'not used', 'unused'])) return 'danger'
+  if (includesStatusPhrase(value, ['ใช้บิลมัดจำไปแล้ว', 'ใช้บิลมัดจำแล้ว', 'ใช้บิลมัดจำ', 'ใช้ใบมัดจำไปแล้ว', 'ใช้ใบมัดจำแล้ว', 'ใช้ใบมัดจำ', 'ใช้บิลแล้ว', 'ใช้แล้ว', 'used'])) return 'success'
+  return 'danger'
+}
+
+function getProductStatusTone(value) {
+  if (!hasStatusValue(value)) return 'danger'
+  if (includesStatusPhrase(value, ['ยังไม่เข้า', 'ยังไม่มีสินค้า', 'ยังไม่มีข้อมูล', 'ไม่มีข้อมูล', 'สินค้าไม่เข้า', 'ของยังไม่เข้า', 'รอสินค้า', 'รอของ', 'out of stock', 'pending'])) return 'danger'
+  return 'info'
+}
+
+function isCallComplete(value) {
+  return hasStatusValue(value) && !includesStatusPhrase(value, ['ยังไม่ได้โทร', 'ยังไม่โทร', 'ไม่ได้โทร', 'ไม่โทร', 'not called'])
+}
+
+function StatusBadge({ value, tone = 'neutral', emptyLabel = 'ยังไม่มีข้อมูล', className = '' }) {
+  const hasValue = hasStatusValue(value)
+  const resolvedTone = hasValue ? tone : 'danger'
+  const label = hasValue ? value : emptyLabel
+
   return (
-    <span className={`status-badge ${isSuccess ? 'status-badge--success' : 'status-badge--neutral'}`}>
-      {isSuccess && <CheckIcon size={16} />}
-      {value}
+    <span className={`status-badge status-badge--${resolvedTone} ${className}`.trim()}>
+      {resolvedTone === 'danger' ? <AlertIcon size={16} /> : resolvedTone !== 'neutral' && <CheckIcon size={16} />}
+      {label}
     </span>
   )
 }
@@ -166,19 +193,19 @@ function BookingCard({ row }) {
           <strong>{owner}</strong>
         </DetailItem>
         <DetailItem icon={ReceiptIcon} label="สถานะบิลมัดจำ">
-          <StatusBadge value={row.billStatus} />
+          <StatusBadge value={row.billStatus} tone={getBillStatusTone(row.billStatus)} />
         </DetailItem>
         <DetailItem icon={PackageIcon} label="สถานะสินค้า">
-          <StatusBadge value={row.productStatus} kind="success" />
+          <StatusBadge value={row.productStatus} tone={getProductStatusTone(row.productStatus)} />
         </DetailItem>
         <DetailItem icon={PhoneIcon} label="สถานะการโทร">
-          <StatusBadge value={row.callStatus ? 'โทรแล้ว' : ''} kind="success" />
+          <StatusBadge value={isCallComplete(row.callStatus) ? 'โทรแล้ว' : 'ยังไม่โทร'} tone={isCallComplete(row.callStatus) ? 'success' : 'danger'} />
         </DetailItem>
         <DetailItem icon={CalendarIcon} label="วันที่โทร">
-          {row.callDate ? <span>{row.callDate}</span> : <span className="empty-cell">ยังไม่มีข้อมูล</span>}
+          <StatusBadge value={row.callDate} tone="success" />
         </DetailItem>
         <DetailItem icon={CommentIcon} label="Comment ลูกค้า" className="detail-item--comment">
-          <span className="detail-comment">{row.comment || 'ยังไม่มีข้อมูล'}</span>
+          <StatusBadge value={row.comment} tone="success" className="status-badge--comment" />
         </DetailItem>
       </div>
     </article>
