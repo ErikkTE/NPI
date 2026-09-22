@@ -25,30 +25,45 @@ export const FALLBACK_ROWS = [
     order: 'DEMO-001',
     employee: 'STAFF-DEMO',
     productStatus: 'พร้อมตรวจสอบ',
+    callStatus: '',
+    callDate: '',
+    comment: '',
   },
   {
     billStatus: 'ตัวอย่างข้อมูล',
     order: 'DEMO-002',
     employee: 'STAFF-DEMO',
     productStatus: 'สินค้าถึงแล้ว',
+    callStatus: 'โทรแล้ว',
+    callDate: 'ตัวอย่างวันที่',
+    comment: 'ลูกค้ารับทราบแล้ว',
   },
   {
     billStatus: 'ตัวอย่างข้อมูล',
     order: 'DEMO-003',
     employee: '',
     productStatus: 'สินค้าถึงแล้ว',
+    callStatus: '',
+    callDate: '',
+    comment: '',
   },
   {
     billStatus: 'ตัวอย่างข้อมูล',
     order: 'DEMO-004',
     employee: '',
     productStatus: 'รอตรวจสอบ',
+    callStatus: '',
+    callDate: '',
+    comment: '',
   },
   {
     billStatus: 'ตัวอย่างข้อมูล',
     order: 'DEMO-005',
     employee: '',
     productStatus: 'รอตรวจสอบ',
+    callStatus: '',
+    callDate: '',
+    comment: '',
   },
 ]
 
@@ -58,6 +73,9 @@ const HEADER_ALIASES = {
   employee: ['พนักงาน', 'employee', 'staff'],
   owner: ['เป็นของใคร', 'ผู้จอง', 'ชื่อผู้จอง', 'ชื่อพนักงาน', 'พนักงาน', 'owner', 'customer', 'employee', 'staff'],
   productStatus: ['สถานะสินค้า', 'product status', 'status'],
+  callStatus: ['โทรตามลูกค้า', 'โทรแล้ว', 'สถานะการโทร', 'สถานะโทร', 'โทรหาลูกค้า', 'call status', 'called'],
+  callDate: ['Date Call', 'วันที่เจ้าหน้าที่โทรไป', 'วันที่โทร', 'วันที่โทรไป', 'วันที่โทรหาลูกค้า', 'call date', 'called at'],
+  comment: ['Comment', 'คอมเมนต์', 'ความคิดเห็นลูกค้า', 'ความคิดเห็น', 'หมายเหตุลูกค้า', 'customer comment', 'comment', 'note'],
 }
 
 const cleanCell = (value = '') => String(value).replace(/^\uFEFF/, '').trim()
@@ -141,6 +159,9 @@ export function mapSheetRows(matrix) {
     employee: findHeaderIndex(headers, HEADER_ALIASES.employee),
     owner: findHeaderIndex(headers, HEADER_ALIASES.owner),
     productStatus: findHeaderIndex(headers, HEADER_ALIASES.productStatus),
+    callStatus: findHeaderIndex(headers, HEADER_ALIASES.callStatus),
+    callDate: findHeaderIndex(headers, HEADER_ALIASES.callDate),
+    comment: findHeaderIndex(headers, HEADER_ALIASES.comment),
   }
 
   if (indexes.order < 0) return []
@@ -151,6 +172,9 @@ export function mapSheetRows(matrix) {
     employee: cleanCell(values[indexes.employee] ?? ''),
     owner: resolveEmployeeName(values[indexes.owner >= 0 ? indexes.owner : indexes.employee] ?? ''),
     productStatus: cleanCell(values[indexes.productStatus] ?? ''),
+    callStatus: cleanCell(values[indexes.callStatus] ?? ''),
+    callDate: cleanCell(values[indexes.callDate] ?? ''),
+    comment: cleanCell(values[indexes.comment] ?? ''),
   })).filter((row) => row.order !== '')
 }
 
