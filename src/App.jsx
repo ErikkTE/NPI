@@ -116,6 +116,15 @@ function PackageIcon({ size = 23 }) {
   )
 }
 
+function IPhoneIcon({ size = 23 }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="7" y="2.75" width="10" height="18.5" rx="2.2" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M10.2 5.6h3.6M11.35 18.3h1.3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function PhoneIcon({ size = 23 }) {
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -190,6 +199,9 @@ function BookingCard({ row }) {
         </DetailItem>
         <DetailItem icon={PackageIcon} label="สถานะสินค้า">
           <StatusBadge value={row.productStatus} tone={getProductStatusTone(row.productStatus)} />
+        </DetailItem>
+        <DetailItem icon={IPhoneIcon} label="รุ่น iPhone">
+          {row.iphoneModel ? <span className="iphone-model">{row.iphoneModel}</span> : <span className="empty-cell">ยังไม่มีข้อมูล</span>}
         </DetailItem>
         <DetailItem icon={PhoneIcon} label="สถานะการโทร">
           <StatusBadge value={isCallComplete(row.callStatus) ? 'โทรแล้ว' : 'ยังไม่โทร'} tone={isCallComplete(row.callStatus) ? 'success' : 'danger'} />
@@ -477,7 +489,7 @@ export default function App() {
           <section className="search-section" aria-labelledby="search-title">
             <div className="section-heading">
               <h1 id="search-title">ตรวจสอบเลขจอง</h1>
-              <p>ค้นหาเลขจองจาก Google Sheet แท็บ {SHEET_TAB_NAME} เพื่อดูสถานะสินค้า การโทร วันที่โทร และ Comment ลูกค้า</p>
+              <p>ค้นหาเลขจองจาก Google Sheet แท็บ {SHEET_TAB_NAME} เพื่อดูสถานะสินค้า รุ่น iPhone การโทร วันที่โทร และ Comment ลูกค้า</p>
             </div>
 
             <form className="search-form" onSubmit={handleSearch}>
