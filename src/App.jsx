@@ -125,6 +125,15 @@ function IPhoneIcon({ size = 23 }) {
   )
 }
 
+function LotIcon({ size = 23 }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M4.8 5.2h6.1l8.3 8.3-6.4 6.4-8-8V5.2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <circle cx="8.3" cy="8.6" r="1.1" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
 function PhoneIcon({ size = 23 }) {
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -202,6 +211,9 @@ function BookingCard({ row }) {
         </DetailItem>
         <DetailItem icon={IPhoneIcon} label="รุ่น iPhone">
           {row.iphoneModel ? <span className="iphone-model">{row.iphoneModel}</span> : <span className="empty-cell">ยังไม่มีข้อมูล</span>}
+        </DetailItem>
+        <DetailItem icon={LotIcon} label="Lot รับของลูกค้า">
+          {row.lotReceived ? <span className="lot-value">{row.lotReceived}</span> : <span className="empty-cell">ยังไม่มีข้อมูล</span>}
         </DetailItem>
         <DetailItem icon={PhoneIcon} label="สถานะการโทร">
           <StatusBadge value={isCallComplete(row.callStatus) ? 'โทรแล้ว' : 'ยังไม่โทร'} tone={isCallComplete(row.callStatus) ? 'success' : 'danger'} />
@@ -489,7 +501,7 @@ export default function App() {
           <section className="search-section" aria-labelledby="search-title">
             <div className="section-heading">
               <h1 id="search-title">ตรวจสอบเลขจอง</h1>
-              <p>ค้นหาเลขจองจาก Google Sheet แท็บ {SHEET_TAB_NAME} เพื่อดูสถานะสินค้า รุ่น iPhone การโทร วันที่โทร และ Comment ลูกค้า</p>
+              <p>ค้นหาเลขจองจาก Google Sheet แท็บ {SHEET_TAB_NAME} เพื่อดูสถานะสินค้า รุ่น iPhone Lot รับของลูกค้า การโทร วันที่โทร และ Comment ลูกค้า</p>
             </div>
 
             <form className="search-form" onSubmit={handleSearch}>

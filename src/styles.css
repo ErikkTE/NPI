@@ -718,6 +718,11 @@ a {
   font-weight: 750;
 }
 
+.lot-value {
+  color: var(--ink);
+  font-weight: 750;
+}
+
 .detail-comment {
   display: block;
   color: #526980;
